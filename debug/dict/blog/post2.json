@@ -1,0 +1,12 @@
+{
+  "title": {
+    "en": "Blogpost 2 Title",
+    "de": "Blogspot 2 Titel",
+    "es": "Blogspot 2 Título"
+  },
+  "helloMessage": {
+    "en": "Hello, everybody!",
+    "de": "Hallo, alle zusammen!",
+    "es": "¡Hola todos!"
+  }
+}

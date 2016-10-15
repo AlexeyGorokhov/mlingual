@@ -1,0 +1,12 @@
+{
+  "title": {
+    "en": "Welcome to our website",
+    "de": "Willkommen auf unserer Webseite",
+    "es": "Bienvenido a nuestro sitio web"
+  },
+  "helloMessage": {
+    "en": "Hello, everybody!",
+    "de": "Hallo, alle zusammen!",
+    "es": "¡Hola todos!"
+  }
+}

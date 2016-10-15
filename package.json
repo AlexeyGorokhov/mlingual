@@ -1,0 +1,48 @@
+{
+  "name": "mlingual",
+  "version": "1.0.0",
+  "description": "Create sets of textual files in different languages from templates",
+  "main": "index.js",
+  "engines": {
+    "node": ">=6.0.0"
+  },
+  "scripts": {
+    "test": "semistandard && node_modules/.bin/tape 'test/**/*.js' | tap-spec",
+    "test:dev": "node_modules/.bin/tape 'test/**/*.js' | tap-spec"
+  },
+  "author": {
+    "name": "Alexey Gorokhov",
+    "email": "alexey.gorokhov@icloud.com",
+    "url": ""
+  },
+  "license": "MIT",
+  "devDependencies": {
+    "proxyquire": "^1.7.10",
+    "semistandard": "^9.0.0",
+    "sinon": "^1.17.6",
+    "tap-spec": "^4.1.1",
+    "tape": "^4.6.0"
+  },
+  "dependencies": {
+    "del": "^2.2.2",
+    "globby": "^6.0.0",
+    "mkdirp": "^0.5.1",
+    "through2": "^2.0.1"
+  },
+  "keywords": [
+    "language",
+    "internationalization",
+    "i18n",
+    "multilindual",
+    "dictionary",
+    "template"
+  ],
+  "homepage": "https://github.com/AlexeyGorokhov/mlingual",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/AlexeyGorokhov/mlingual"
+  },
+  "bugs": {
+    "url": "https://github.com/AlexeyGorokhov/mlingual/issues"
+  }
+}
