@@ -1,99 +1,191 @@
 # mlingual
 
-Create sets of textual files in different languages from templates
+An opinionated build tool for making apps multilingual
 
 [![npm](https://img.shields.io/npm/l/express.svg?maxAge=2592000)]()
-[![node](https://img.shields.io/node/v/gh-badges.svg?maxAge=2592000)](https://github.com/AlexeyGorokhov/mlingual)
-[![js-semistandard-style](https://img.shields.io/badge/code%20style-semistandard-brightgreen.svg?style=flat-square)](https://github.com/Flet/semistandard)
+
+mlingual offers a highly opinionated way of making apps multilingual. It rests on the following basic ideas:
+
+1. There must be only one variant of codebase in VCS. All the multilinguality must appear on the build phase. mlingual is a utility which might be used with any build tool supporting javascript.
+
+2. Dictionaries should be maintainable separately from the app codebase. As a developer, you only build the structure of a dictionary, then pass it to a professional translator.
+
+3. Dictionary entries are grouped by there keys. Each key includes all the languages you are to support. This makes maintenance easier.
+
+  ```json
+  {
+    "title": {
+      "en": "Welcome to our website",
+      "de": "Willkommen auf unserer Webseite",
+      "es": "Bienvenido a nuestro sitio web"
+    },
+    "helloMessage": {
+      "en": "Hello, everybody!",
+      "de": "Hallo, alle zusammen!",
+      "es": "¡Hola todos!"
+    }
+  }
+  ```
+
+4. There should be a way of progressive translation with default language option. In the following example, Spanish translation of the `helloMessage` key will default to the first language option `en`:
+
+  ```json
+  {
+    "title": {
+      "en": "Welcome to our website",
+      "de": "Willkommen auf unserer Webseite",
+      "es": "Bienvenido a nuestro sitio web"
+    },
+    "helloMessage": {
+      "en": "Hello, everybody!",
+      "de": "Hallo, alle zusammen!"
+    }
+  }
+  ```
+
+5. Dictionaries should be maintained in a friendly folder hierarchy. Like this:
+
+  ```
+  -- dict
+     |
+     |-- pages
+     |   |-- blog
+     |   |   |
+     |   |   |-- post1.json
+     |   |   |-- post2.json
+     |   |
+     |   |-- header.json
+     |   |-- footer.json
+     |   
+     |
+     |-- global.json
+  ```
+
+  Then in you templates, you reference dictionary entries like this:
+
+  ```
+  $$pages.header.helloMessage$$
+  $$pages.blog.post2.title$$
+  $$global.userNameLabel$$
+  ```
+
 
 ## Installation
 
 ```bash
-$ npm install mlingual --save-dev
+$ npm install --save-dev mlingual
 ```
 
-## Usage example
+
+## Usage Scenarios
+
+In all examples below, we assume your dictionaries have two languages: `en` and `de`, and the structure of your source dictionary folder is as shown above.
+
+### Dictionaries
+
+#### Basic output format
 
 ```js
 const mlingual = require('mlingual');
 
-mlingual('./src/html/', './src/dict', './bin/html', '$$')
-.then(() => console.log('HTML files have been processed.'))
-.catch(err => console.error(err));
+await mlingual({
+  dict: {
+    src: './src/dict',
+    dest: './public/dict'
+  }
+});
 ```
 
-## Workflow
+This will produce the following output folder structure:
 
-### Dictionaries
-
-Dictionary files might be organized in sub-directories. Sub-directory names become properties of the final dictionary object. E.g., given the following file structure of the dictionary folder,
-
-```text
--- dict    <- Root directory
+```
+-- public/dict
    |
-   |-- homepage
+   |-- pages
    |   |
-   |   |-- header.json
+   |   |-- blog
+   |   |   |
+   |   |   |-- en
+   |   |   |   |
+   |   |   |   |-- post1.json
+   |   |   |   |-- post2.json
+   |   |   |
+   |   |   |-- de
+   |   |       |
+   |   |       |-- post1.json
+   |   |       |-- post2.json
+   |   |
+   |   |--en
+   |   |  |
+   |   |  |-- header.json
+   |   |  |-- footer.json
+   |   |
+   |   |--de
+   |      |
+   |      |-- header.json
+   |      |-- footer.json
+   |   
+   |--en
+   |  |
+   |  |--global.json
    |
-   |-- global.json
+   |--de
+      |
+      |--global.json
+
 ```
 
-abd content of the `header.json` file,
+#### Flat output format
 
-```json
-{
-  "greeting": {
-    "en": "Hello",
-    "de": "Hallo",
-    "es": "Hola"
-  },
-  "greetingNext": {
-    "en": "How are you?",
-    "de": "Wie geht es dir?",
-    "es": "¿Cómo estás?"
+```js
+const mlingual = require('mlingual');
+
+await mlingual({
+  dict: {
+    src: './src/dict',
+    dest: './public/dict',
+    isFlat: true
   }
-}
+});
 ```
 
-and content of the `global.json` file,
+This will produce the following output folder structure:
 
-```json
-{
-  "saveBtnLabel": {
-    "en": "Save",
-    "de": "Speichern",
-    "es": "Guardar"
-  },
-  "cancelBtnLabel" : {
-    "en": "Cancel",
-    "de": "Stornieren",
-    "es": "Cancelar"
+```
+-- public/dict
+   |
+   |-- pages.blog.post1.en.json
+   |-- pages.blog.post1.de.json
+   |-- pages.blog.post2.en.json
+   |-- pages.blog.post2.de.json
+   |-- pages.header.en.json
+   |-- pages.header.de.json
+   |-- pages.footer.en.json
+   |-- pages.footer.de.json
+   |-- global.en.json
+   |-- global.de.json
+```
+
+#### Dictionary Output Summary
+
+```js
+const mlingual = require('mlingual');
+
+await mlingual({
+  dict: {
+    src: './src/dict',
+    dest: './public/dict',
+    summaryDest: './build/dict-summary'
   }
-}
+});
 ```
 
-we'll get the following object for each language (e.g., `en`):
+Then a JSON file containing an array of names of all output dictionary files will be put in the `./build/dict-summary` folder. The file names contain paths relative to `./public/dict`.
 
-```javascript
-{
-  global: {
-    saveBtnLabel: 'Save',
-    cancelBtnLabel: 'Cancel'
-  },
-  homepage: {
-    header: {
-      greeting: 'Hello',
-      greetingNext: 'How are you?'
-    }
-  }
-}
-```
+This might be useful for cache-busting dictionary files with hashes.
 
-__Notes__:
 
-* In case a property doesn't contain the full set of language descriptors, the first descriptor is used instead.
-
-### Templates
+### Processing templates
 
 Create templates in any textual format with placeholders which are to be replaced with strings in different languages. E.g.,
 
@@ -105,16 +197,136 @@ Create templates in any textual format with placeholders which are to be replace
 
 The only restriction is that __between any two placeholders must be a space or a line break__.
 
+Examples below assume the following structure of the folder with templates:
+
+```
+-- src/html
+   |
+   |-- pages
+   |   |-- blog
+   |   |   |
+   |   |   |-- post1.html
+   |   |   |-- post2.html
+   |   |
+   |   |-- signup.html
+   |
+   |-- index.html
+```
+
+#### Basic output format
+
+```js
+const mlingual = require('mlingual');
+
+await mlingual({
+  dict: {
+    src: './src/dict'
+  },
+  template: {
+    src: './src/html',
+    dest: './public/html'
+  }
+});
+```
+
+This will produce the following output folder structure:
+
+```
+-- public/html
+   |
+   |-- pages
+   |   |-- blog
+   |   |   |
+   |   |   |-- en
+   |   |   |   |
+   |   |   |   |-- post1.html
+   |   |   |   |-- post2.html
+   |   |   |  
+   |   |   |-- de
+   |   |       |
+   |   |       |-- post1.html
+   |   |       |-- post2.html
+   |   |
+   |   |-- en
+   |   |   |
+   |   |   |-- signup.html
+   |   |
+   |   |-- de
+   |       |
+   |       |-- signup.html
+   |
+   |--en
+   |  |
+   |  |-- index.html
+   |
+   |--de
+      |
+      |-- index.html
+```
+
+#### Flat output format
+
+```js
+const mlingual = require('mlingual');
+
+await mlingual({
+  dict: {
+    src: './src/dict'
+  },
+  template: {
+    src: './src/html',
+    dest: './public/html',
+    isFlat: true
+  }
+});
+```
+
+This will produce the following output folder structure:
+
+```
+-- public/html
+   |
+   |-- pages.blog.post1.en.html
+   |-- pages.blog.post1.de.html
+   |-- pages.blog.post2.en.html
+   |-- pages.blog.post2.de.html
+   |-- pages.signup.en.html
+   |-- pages.signup.de.html
+   |-- index.en.html
+   |-- index.de.html
+```
+
+
 ## API Reference
 
-`{Function} mlingual(srcFolder, dictFolder, destFolder, [delimiter])`
+`{Function} mlingual(dict, [template])`
 
-* `{String} srcFolder` - Absolute or relative to `process.cwd()` path to the folder containing templates.
+Returns `{Promise<void>}`
 
-* `{String} dictFolder` - Absolute or relative to `process.cwd()` path to the folder containing dictionaries.
+### `{Object} dict`
 
-* `{String} destFolder` - Absolute or relative to `process.cwd()` path to the destination folder.
+Dictionary related options. Required.
 
-* `{String} delimiter` - Optional. Placeholder delimiter symbol(s). Defaults to `$$`.
+Properties:
 
-* Returns `{Promise<Void>}`.
+* `{String} src` - Absolute or relative to `process.cwd()` path to the folder containing dictionaries. Required.
+
+* `{String} dest` - Absolute or relative to process.cwd() path to the destination folder for converted dictionaries. Optional. If not provided, converted dictionaries are not saved.
+
+* `{Boolean} isFlat` - If true, converted dictionaries are flatly output to the `dest` folder in the format `[subfolder1].[subfolderN].[filename].[langCode].json` instead of preserving subfolder structure.  Optional. Defaults to `false`. This prop has no effect if `dest` prop is not provided.
+
+* `{String} summaryDest` - Absolute or relative to process.cwd() path to the folder to save a json-file containing an array of generated dictionaries filenames. Optional. If not provided, the summary file is not created. This prop has no effect if `dest` prop is not provided.
+
+* `{String} summaryFileName` - Name of the summary file without extension. File extension is always `.json`. Optional. Defaults to `dict-summary`.
+
+### `{Object} template`
+
+Template related options. Optional. If not provided, templates are not processed.
+
+* `{String} src` - Absolute or relative to `process.cwd()` path to the folder containing source templates to be processed.
+
+* `{String} dest` - Absolute or relative to process.cwd() path to the destination folder for processed templates.
+
+* `{String} delimiter` - Placeholder delimiter symbol(s) for templates processing. Optional. Defaults to `$$`.
+
+* `{Boolean} isFlat` - If true, output files are saved in the dest folder in relative subfolder in the format `[filename].[langCode].[ext]` instead of creating additional subfolders for each language code. Optional. Defaults to `false`.

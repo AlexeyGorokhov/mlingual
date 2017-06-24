@@ -1,80 +1,58 @@
 'use strict';
 
-const path = require('path');
-const del = require('del');
-const getSrcFilePaths = require('./lib/get-src-files');
-const getOverallDict = require('./lib/get-overall-dict');
-const getLangsCollection = require('./lib/get-langs');
-const createDictionaryForLanguage = require('./lib/create-lang-dict');
-const createDestFolder = require('./lib/create-dest-folders');
-const createDestFile = require('./lib/create-dest-file');
+const validateOptions = require('./lib/validate-options');
+const processDicts = require('./lib/dict/process-dicts');
+const saveDicts = require('./lib/dict/save-dicts');
+const processTemplates = require('./lib/template/process-templates');
 
 /**
- * @param {String} srcFolder - Absolute or relative to `process.cwd()` path to the folder
- *        containing source templates
- * @param {String} dictFolder - Absolute or relative to process.cwd() path to the folder
- *        containing dictionaries
- * @param {String} destFolder - Absolute or relative to process.cwd() path to the destination folder
- * @param {String} [delimiter] - Optional. Placeholder delimiter symbol(s). Defaults to `$$`
+ * @param {Object} opts
+ *        @prop {Object} dict Dictionary related options. Required.
+ *              @prop {String} src Absolute or relative to `process.cwd()` path to the folder
+ *                    containing dictionaries. Required.
+ *              @prop {String} dest Absolute or relative to process.cwd() path to the destination
+ *                    folder for converted dictionaries. Optional. If not provided,
+ *                    converted dictionaries are not saved.
+ *              @prop {Boolean} isFlat If true, converted dictionaries are flatly output
+ *                    to the `dest` folder in the format
+ *                    [subfolder1].[subfolderN].[filename].[langCode].json instead of
+ *                    preserving subfolder structure.
+ *                    Optional. Defaults to `false`.
+ *                    This prop has no effect if `dest` prop is not provided.
+ *              @prop {String} summaryDest Absolute or relative to process.cwd() path to
+ *                    the folder to save a json-file containing an array of generated
+ *                    dictionaries filenames.
+ *                    Optional. If not provided, the summary file is not created.
+ *                    This prop has no effect if `dest` prop is not provided.
+ *              @prop {String} summaryFileName Name of the summary file without extension.
+ *                    File extension is always `.json`.
+ *                    Optional. Defaults to `dict-summary`.
+ *        @prop {Object} template Template related options.
+ *                       Optional. If not provided, templates are not processed.
+ *              @prop {String} src Absolute or relative to `process.cwd()` path to the folder
+ *                    containing source templates to be processed
+ *              @prop {String} dest Absolute or relative to process.cwd() path to
+ *                    the destination folder for processed templates
+ *              @prop {String} delimiter Placeholder delimiter symbol(s) for templates processing.
+ *                    Optional. Defaults to `$$`.
+ *              @prop {Boolean} isFlat If true, output files are saved in the dest folder in
+ *                    relative subfolder in the format [filename].[langCode].[ext] instead of
+ *                    creating additional subfolders for each language code.
+ *                    Optional. Defaults to `false`.
+ *
  * @return {Promise<Void>}
- * @public
  */
-module.exports = function (srcFolder, dictFolder, destFolder, delimiter = '$$') {
-  return new Promise((resolve, reject) => {
-    let absDestFolder;
-    let langs;
-    let dicts;
-    let srcFilePaths;
-    let destFilePaths;
+module.exports = async function mlingual (opts) {
+  const validationError = validateOptions(opts);
 
-    Promise.resolve()
-    .then(() => {
-      absDestFolder = path.resolve(process.cwd(), destFolder);
-      return del(`${absDestFolder}/**`);
-    })
-    .then(() => getOverallDict(dictFolder))
-    .then(overallDict => {
-      langs = getLangsCollection(overallDict);
-      dicts = Object.create(null);
+  if (validationError) {
+    return Promise.reject(validationError);
+  }
 
-      for (const lang of langs) {
-        dicts[lang] = createDictionaryForLanguage(lang, overallDict);
-      }
+  const dictsByLang = await processDicts(opts.dict);
 
-      return getSrcFilePaths(srcFolder);
-    })
-    .then(paths => {
-      srcFilePaths = paths;
-
-      destFilePaths = srcFilePaths.map(srcFilePath => {
-        const relativeToSrc = path.relative(srcFolder, srcFilePath);
-        return path.join(absDestFolder, relativeToSrc);
-      });
-
-      return Promise.all(destFilePaths.map(p => createDestFolder(p, langs)));
-    })
-    .then(() => {
-      const tasks = [];
-
-      srcFilePaths.forEach((srcFilePath, index) => {
-        const destFilePath = destFilePaths[index];
-
-        langs.forEach(lang => {
-          const destFilePathWithLangCode = path.join(
-            path.dirname(destFilePath),
-            lang,
-            path.basename(destFilePath)
-          );
-
-          tasks.push(createDestFile(srcFilePath, destFilePathWithLangCode, dicts[lang], delimiter));
-        });
-      });
-
-      return Promise.all(tasks);
-    })
-    .then(() => {
-      resolve();
-    })
-    .catch(reject);
-  });
+  await Promise.all([
+    saveDicts(opts.dict, dictsByLang),
+    processTemplates(opts.template, dictsByLang)
+  ]);
 };

@@ -1,4 +1,5 @@
 .DS_Store
 node_modules/
-debug/dest/
-npm-debug.log
+examples/dest/
+*.log
+package-lock.json

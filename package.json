@@ -1,14 +1,16 @@
 {
   "name": "mlingual",
-  "version": "1.0.0",
-  "description": "Create sets of textual files in different languages from templates",
+  "version": "2.0.0",
+  "description": "An opinionated build tool for making apps multilingual",
   "main": "index.js",
   "engines": {
-    "node": ">=6.0.0"
+    "node": ">=8.0.0"
   },
   "scripts": {
-    "test": "semistandard && node_modules/.bin/tape 'test/**/*.js' | tap-spec",
-    "test:dev": "node_modules/.bin/tape 'test/**/*.js' | tap-spec"
+    "test": "./node_modules/.bin/semistandard --verbose | ./node_modules/.bin/snazzy && ./node_modules/.bin/tape 'test/**/*.js' | tap-summary",
+    "test:dev": "./node_modules/.bin/tape 'test/**/*.js' | tap-summary",
+    "example:flat": "node ./examples/example-flat",
+    "example:not-flat": "node ./examples/example-not-flat"
   },
   "author": {
     "name": "Alexey Gorokhov",
@@ -18,13 +20,14 @@
   "license": "MIT",
   "devDependencies": {
     "proxyquire": "^1.7.10",
-    "semistandard": "^9.0.0",
-    "sinon": "^1.17.6",
-    "tap-spec": "^4.1.1",
+    "semistandard": "^11.0.0",
+    "sinon": "^2.3.4",
+    "snazzy": "^7.0.0",
+    "tap-summary": "^3.0.1",
     "tape": "^4.6.0"
   },
   "dependencies": {
-    "del": "^2.2.2",
+    "del": "^3.0.0",
     "globby": "^6.0.0",
     "mkdirp": "^0.5.1",
     "through2": "^2.0.1"
@@ -33,7 +36,7 @@
     "language",
     "internationalization",
     "i18n",
-    "multilindual",
+    "multilingual",
     "dictionary",
     "template"
   ],
